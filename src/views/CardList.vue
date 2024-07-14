@@ -1,16 +1,15 @@
 <template>
   <v-container>
-    <v-text-field v-model="searchQuery" label="Search" append-icon="mdi-magnify" single-line
-      hide-details></v-text-field>
+    <v-text-field class="search-field" v-model="searchQuery" label="Search" append-icon="mdi-magnify" single-line
+      hide-details />
     <v-row>
       <v-col v-for="item in filteredItems" :key="item.id" cols="12" md="4">
-        <v-card @click="goToItem(item.id)">
-          <v-card-title>{{ item.name }}</v-card-title>
-          <v-card-text>{{ item.data }}</v-card-text>
-        </v-card>
+        <ItemCard :item="item" />
       </v-col>
     </v-row>
-    <v-btn @click="loadMore">Load More</v-btn>
+    <div class="load-more-container">
+      <v-btn @click="loadMore" class="load-more-btn">Load More</v-btn>
+    </div>
   </v-container>
 </template>
 
@@ -18,27 +17,52 @@
 import { onMounted } from 'vue';
 import { useItemStore } from '../stores/useItemStore';
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import ItemCard from '@/components/ItemCard.vue';
 
 const store = useItemStore();
 const searchQuery = ref('');
-const router = useRouter();
 
 const filteredItems = computed(() => {
-  return store.items.filter(item =>
+  let items = store.items.filter(item =>
     item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
+
+  if (searchQuery.value.trim() !== '') {
+    items = items.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  return items.slice(0, store.displayedCount);
 });
 
 const loadMore = () => {
-
+  store.loadMore();
 };
 
-const goToItem = (id) => {
-  router.push(`/item/${id}`);
-};
 
 onMounted(() => {
   store.fetchItems();
 });
 </script>
+
+<style scoped>
+.search-field {
+  margin-bottom: 20px;
+}
+
+.load-more-btn {
+  margin-top: 20px;
+  background-color: #1976d2;
+  color: white;
+  align-self: center;
+}
+
+.load-more-btn:hover {
+  background-color: #1565c0;
+}
+
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+</style>

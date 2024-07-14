@@ -1,19 +1,26 @@
 <template>
   <v-container>
-    <v-text-field v-model="item.name" :label="capitalizeFirstLetter('name')" v-if="!loading"></v-text-field>
+    <v-alert v-if="errorMessage" type="error" dismissible @click="clearError">{{ errorMessage }}</v-alert>
+
+    <v-text-field v-model="item.name" :label="capitalizeFirstLetter('name')" v-if="!loading" />
 
     <div v-if="!loading">
       <div v-for="(value, key) in item.data" :key="key">
         <v-text-field v-model="item.data[key]" :label="capitalizeFirstLetter(key)"
-          :type="getInputType(value)"></v-text-field>
+          :type="typeof (value)"></v-text-field>
       </div>
     </div>
 
-    <v-btn :disabled="!hasChanges || loading" @click="saveChanges">Save Changes</v-btn>
-    <v-btn :disabled="!hasChanges || loading" @click="discardChanges">Discard Changes</v-btn>
-    <v-btn @click="deleteItem" :disabled="loading">Delete</v-btn>
+    <v-btn color="green darken-1" :disabled="!hasChanges || loading" @click="saveChanges">Save Changes</v-btn>
+    <v-btn color="yellow darken-1" :disabled="!hasChanges || loading" @click="discardChanges">Discard Changes</v-btn>
+    <v-btn color="red darken-1" @click="showDeleteConfirmation" :disabled="loading">Delete</v-btn>
 
     <v-progress-circular v-if="loading" indeterminate></v-progress-circular>
+
+    <!-- Utilizarea componentei DeleteConfirmationDialog -->
+    <ConfirmationDialog :visible="deleteDialog" headline="Confirm Delete"
+      description="Are you sure you want to delete this item?" @update:visible="deleteDialog = $event"
+      @confirm="confirmDelete" />
   </v-container>
 </template>
 
@@ -22,16 +29,20 @@ import { useItemStore } from '../stores/useItemStore';
 import { ref, computed, watch, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCapitalizeFirstLetter } from '../composables/useCapitalizeFirstLetter';
+import ConfirmationDialog from '../components/ConfirmationDialog.vue';
 
 const store = useItemStore();
 const item = ref({ id: 0, name: '', data: {} });
 const loading = ref(true);
+const errorMessage = ref('');
+const deleteDialog = ref(false);
+
 const route = useRoute();
 const router = useRouter();
 const { capitalizeFirstLetter } = useCapitalizeFirstLetter();
 
-const getInputType = (value) => {
-  return typeof value === 'number' ? 'number' : 'text';
+const clearError = () => {
+  errorMessage.value = '';
 };
 
 const hasChanges = computed(() => {
@@ -45,19 +56,34 @@ const hasChanges = computed(() => {
   );
 });
 
-const saveChanges = () => {
-  console.log(item.value.id)
-  console.log(item.value)
-  store.updateItem(item.value.id, item.value);
+const saveChanges = async () => {
+  try {
+    await store.updateItem(item.value.id, item.value);
+    store.currentItem = JSON.parse(JSON.stringify(item.value));
+    clearError();
+  } catch (error) {
+    errorMessage.value = error.message;
+  }
 };
 
 const discardChanges = () => {
   item.value = JSON.parse(JSON.stringify(store.currentItem));
 };
 
-const deleteItem = () => {
-  store.deleteItem(item.value.id);
-  router.push('/');
+const showDeleteConfirmation = () => {
+  deleteDialog.value = true;
+};
+
+const confirmDelete = async () => {
+  try {
+    await store.deleteItem(item.value.id);
+    clearError();
+    deleteDialog.value = false;
+    router.push('/');
+  } catch (error) {
+    errorMessage.value = error.message;
+    deleteDialog.value = false;
+  }
 };
 
 const fetchData = async (id) => {
@@ -83,6 +109,23 @@ watch(
   },
   { deep: true }
 );
-
-
 </script>
+
+<style scoped>
+.v-card {
+  padding: 20px;
+}
+
+.v-card-title {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.v-card-actions {
+  justify-content: flex-end;
+}
+
+.v-btn {
+  margin: 5px;
+}
+</style>

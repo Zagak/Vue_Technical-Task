@@ -1,13 +1,13 @@
 <template>
   <v-app>
     <v-app-bar app>
-      <v-toolbar-title>My Vue App</v-toolbar-title>
+      <v-toolbar-title>Vue - Technical Task</v-toolbar-title>
     </v-app-bar>
     <v-main>
       <router-view />
     </v-main>
     <v-footer app>
-      <span>&copy; 2024 My Vue App</span>
+      <span>&copy; Costache Paul Eduard 2024</span>
     </v-footer>
   </v-app>
 </template>
@@ -19,7 +19,3 @@ export default {
   }
 };
 </script>
-
-<style>
-/* Adaugă stiluri globale aici, dacă este necesar */
-</style>
