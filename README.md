@@ -1,5 +1,8 @@
 # vue_technical-task
 
+## Check it live here
+https://vue-technical-task-seven.vercel.app/
+
 ## Project setup
 ```
 npm install
